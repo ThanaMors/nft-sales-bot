@@ -1,1 +1,17 @@
-[{"name":"tiffPunks","channel":"1004511721592983563","address":"0xfb76f849baf4a4db22550ebc7beb520652f888a0"},{"name":"cryptocrabs","channel":"1004909973488271431","address":"0xf0f7f64b7a8997701d99b7eb67ecf22e66fef9c1"},{"name":"subwayrats","channel":"1004912962269630565","address":"0x696383fc9c5c8568c2e7af8731279b58b9201394"},{"name":"thedumbkeys","channel":"1004949395869007883","address":"0x821ac60092ab33ac357cfb7c64037b435c06c5d3"},{"name":"nutties","channel":"1004949834765193257","address":"0xd2cebaebb6e3f3a39ff2bdeeadd5413421c8e384"},{"name":"BAYC","channel":"1004951351429705748","address":"0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D"}]
+[
+  {
+    "name": "Azuki",
+    "channel": "971182002009161839",
+    "address": "0xed5af388653567af2f388e6224dc7c4b3241c544"
+  },
+  {
+    "name": "BAYC",
+    "channel": "971179978752397422",
+    "address": "0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d"
+  },
+  {
+    "name": "Beanz",
+    "channel": "971848278775853116",
+    "address": "0x306b1ea3ecdf94ab739f1910bbda052ed4a9f949"
+  }
+]

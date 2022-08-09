@@ -1,5 +1,5 @@
 require("dotenv").config();
-const web3 = require("./web3.js");
+const Web3 = require("web3");
 const process = require("process");
 const moment = require("moment");
 const config = require("./config.json");
@@ -10,14 +10,30 @@ const fetch = require("node-fetch");
 const fs = require("fs");
 const nftabi = require("./ABIs/nftabi.json");
 
+//WEB3
+let web3 = new Web3(
+  new Web3.providers.WebsocketProvider(process.env.INFURA_ENDPOINT, {
+    clientConfig: {
+      keepalive: true,
+      keepaliveInterval: 60000,
+    },
+    reconnect: {
+      auto: true,
+      delay: 5000, // ms
+      maxAttempts: 25,
+      onTimeout: false,
+    },
+  })
+);
+
 process.on("unhandledRejection", (reason, promise) => {
   console.log("Unhandled Rejection at:", promise, "reason:", reason);
 });
 
 //DISCORD CLIENT
-const client = new Client({
-  intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES],
-});
+const myIntents = new Intents();
+myIntents.add("GUILDS", "GUILD_MESSAGES");
+const client = new Client({ intents: myIntents });
 
 //LOGIN TO DISCORD
 client.login(process.env.DISCORD_TOKEN);
@@ -46,13 +62,17 @@ let lowercaseAddresses = addresses.map((address) => {
   return address.toLowerCase();
 });
 
-///////////////////////////////////////
-
 //////////////////////////////////////
 //DISCORD
-const prefix = "!";
-client.on("messageCreate", (message) => {
-  const accessFile = (collectionName, address, channelid, addOrDelete) => {
+client.on("interactionCreate", (interaction) => {
+  if (!interaction.isCommand()) return;
+
+  const accessFile = async (
+    collectionName,
+    address,
+    channelid,
+    addOrDelete
+  ) => {
     let rawdata = fs.readFileSync("./config.json");
     let json = JSON.parse(rawdata);
     let isAccountThere = false;
@@ -70,9 +90,9 @@ client.on("messageCreate", (message) => {
           channel: channelid,
           address: address,
         });
-        message.channel.send(`Added: ${name} `);
+        await interaction.reply(`Added: ${collectionName} `);
       } else {
-        message.channel.send(`@${collectionName} already exists!`);
+        await interaction.reply(`@${collectionName} already exists!`);
       }
     } else {
       if (isAccountThere === true) {
@@ -80,9 +100,9 @@ client.on("messageCreate", (message) => {
           (collection) =>
             collection.name.toLowerCase() != collectionName.toLowerCase()
         );
-        message.channel.send(`Deleted: ${collectionName}`);
+        await interaction.reply(`Deleted: ${collectionName}`);
       } else {
-        message.channel.send(`@${collectionName} doesn't exist!`);
+        await interaction.reply(`@${collectionName} doesn't exist!`);
       }
     }
 
@@ -90,66 +110,47 @@ client.on("messageCreate", (message) => {
     fs.writeFileSync("config.json", data);
   };
 
-  if (!message.content.startsWith(prefix) || message.author.bot) return;
-
-  //splicing the command (example): !check help (splits the two words)
-  const args = message.content.slice(prefix.length).split(/ +/);
-  const command = args.shift().toLowerCase();
-  let name = args[0];
-  let address = args[1];
-  let channel = args[1];
-
-  //false is add command
-  //true is delete command
-
-  if (command === "addcollection") {
+  if (interaction.commandName === "add-collection") {
+    let channelName = interaction.options.getString("name");
+    let address = interaction.options.getString("address");
     if (
-      message.author.id === "229031571716308992" ||
-      message.author.id === "351236696446205964" ||
-      message.author.id === "120713182707712001"
+      interaction.user.id === "229031571716308992" ||
+      interaction.user.id === "351236696446205964" ||
+      interaction.user.id === "120713182707712001"
     ) {
-      try {
-        message.guild.channels
-          .create(name, {
-            type: "GUILD_TEXT",
-            permissionOverwrites: [
-              {
-                parent: "1004511701401600070",
-                id: "229031571716308992",
-                allow: ["VIEW_CHANNEL", "MANAGE_ROLES"],
-                deny: ["SEND_MESSAGES"],
-              },
-            ],
-          })
-          .then((channel) => {
-            const categoryId = "1004511701401600070";
+      interaction.guild.channels
+        .create(channelName, {
+          type: "GUILD_TEXT",
+          permissionOverwrites: [
+            {
+              id: interaction.guild.roles.everyone,
+            },
+          ],
+        })
+        .then((channel) => {
+          const categoryId = "959223756776149002";
 
-            channel.setParent(categoryId);
-            const channelid = channel.id;
-            console.log(`Created a new channel called ${name}`);
-            accessFile(name, address, channelid, false);
-          })
-          .catch(console.error);
-      } catch (e) {
-        console.log(e);
-      }
+          channel.setParent(categoryId);
+          console.log(`Created a new channel called ${channelName}`);
+          accessFile(channelName, address, channel.id, false);
+        })
+        .catch(console.error);
     }
   }
 
-  if (command === "deletecollection") {
+  if (interaction.commandName === "delete-collection") {
+    let channelName = interaction.options.getString("name");
     if (
-      message.author.id === "229031571716308992" ||
-      message.author.id === "351236696446205964" ||
-      message.author.id === "120713182707712001"
+      interaction.user.id === "229031571716308992" ||
+      interaction.user.id === "351236696446205964" ||
+      interaction.user.id === "120713182707712001"
     ) {
-      try {
-        accessFile(name, null, null, true);
-      } catch (e) {
-        console.log(e);
-      }
+      accessFile(channelName, null, null, true);
     }
   }
 });
+
+///////////////////////////////////////
 
 //OPENSEA ADDRESS
 const seaportAddress =
